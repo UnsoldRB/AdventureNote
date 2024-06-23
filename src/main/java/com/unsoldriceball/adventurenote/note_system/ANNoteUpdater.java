@@ -155,7 +155,7 @@ public class ANNoteUpdater
     //ANPlayerObserverから呼び出される。onUpdateData()のための関数。
     public void onEntityDeath(EntityLivingBase entity, EntityPlayer p)
     {
-        final String _NAME_CLASS = entity.getClass().getCanonicalName();
+        final String _NAME_CLASS = ANUtils.getClassName(entity.getClass());
 
         if (ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).containsKey(_NAME_CLASS))
         {
@@ -180,9 +180,9 @@ public class ANNoteUpdater
     //ANPlayerObserverから呼び出される。onUpdateData()のための関数。
     public void onBiomeChanged(Biome biome, EntityPlayer p)
     {
-        if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BIOMES).containsKey(biome.getClass().getCanonicalName()))
+        if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BIOMES).containsKey(ANUtils.getClassName(biome.getClass())))
         {
-            final String _NAME_CLASS = biome.getClass().getCanonicalName();
+            final String _NAME_CLASS = ANUtils.getClassName(biome.getClass());
 
             if (!note_datas.get(EnumANNoteType.BIOMES).contains(_NAME_CLASS))
             {

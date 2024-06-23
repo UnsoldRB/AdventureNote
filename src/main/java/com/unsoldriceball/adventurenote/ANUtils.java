@@ -134,6 +134,30 @@ public class ANUtils
 
 
 
+    //クラス名を返す関数。
+    public static String getClassName(Class<?> c)
+    {
+        try
+        {
+            return c.getCanonicalName();
+        }
+        catch (NullPointerException exc)
+        {
+            final String _SIMPLENAME = c.getSimpleName();
+
+            if (_SIMPLENAME.equals("[]") || _SIMPLENAME.isEmpty())
+            {
+                return c.getName();
+            }
+            else
+            {
+                return _SIMPLENAME;
+            }
+        }
+    }
+
+
+
     //対象が著名済みの本かどうかを返す関数。
     public static boolean isWrittenBook(ItemStack i)
     {

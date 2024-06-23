@@ -1,6 +1,7 @@
 package com.unsoldriceball.adventurenote.note_system;
 
 import com.google.gson.*;
+import com.unsoldriceball.adventurenote.ANUtils;
 import net.minecraftforge.fml.common.Loader;
 
 import java.io.File;
@@ -88,7 +89,7 @@ public class ANJsonEditor
                 final ArrayList<String> _ARRAY_TEMP = new ArrayList<>();
                 for (String __s : data)
                 {
-                    _ARRAY_TEMP.add(ANDataCollector.f_entities_instance.get(__s).getClass().getCanonicalName());
+                    _ARRAY_TEMP.add(ANUtils.getClassName(ANDataCollector.f_entities_instance.get(__s).getClass()));
                 }
                 return _ARRAY_TEMP;
             }
@@ -97,7 +98,7 @@ public class ANJsonEditor
                 final ArrayList<String> _ARRAY_TEMP = new ArrayList<>();
                 for (String __s : data)
                 {
-                    _ARRAY_TEMP.add(ANDataCollector.f_biomes_instance.get(__s).getClass().getCanonicalName());
+                    _ARRAY_TEMP.add(ANUtils.getClassName(ANDataCollector.f_biomes_instance.get(__s).getClass()));
                 }
                 return _ARRAY_TEMP;
             }

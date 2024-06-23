@@ -1,5 +1,6 @@
 package com.unsoldriceball.adventurenote;
 
+import com.unsoldriceball.adventurenote.note_system.ANDataCollector;
 import com.unsoldriceball.adventurenote.note_system.ANNoteUpdater;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -54,7 +55,7 @@ public class ANPlayerObserver
         final boolean _IS_ENABLE = ANConfig.c_Systems.enableNoteSystem_mob || ANConfig.c_Systems.enableNoteSystem_boss;
         final EntityLivingBase _VICTIM = event.getEntityLiving();
 
-        if (_IS_ENABLE && _VICTIM != null && !_VICTIM.world.isRemote)
+        if (_IS_ENABLE && _VICTIM != null && !_VICTIM.world.isRemote && !ANDataCollector.f_error_entities.contains(_VICTIM))
         {
             final Entity _ATTACKER = event.getSource().getTrueSource();
 
