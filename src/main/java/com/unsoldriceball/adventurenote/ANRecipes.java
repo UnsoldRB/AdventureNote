@@ -49,7 +49,7 @@ public class ANRecipes
         NonNullList<Ingredient> _recipe_input = NonNullList.create();
         _recipe_input.add(_R_BOOK);
         _recipe_input.add(_R_LAPIS);
-        _recipe_input.add(Ingredient.fromItem(Items.STONE_SWORD));
+        _recipe_input.add(Ingredient.fromItem(Items.IRON_SWORD));
         _recipe_input.add(Ingredient.fromItem(Items.SHIELD));
         registerRecipe(_recipe_input, EnumANNoteType.BOSSES);
     }
@@ -73,8 +73,9 @@ public class ANRecipes
         NonNullList<Ingredient> _recipe_input = NonNullList.create();
         _recipe_input.add(_R_BOOK);
         _recipe_input.add(_R_LAPIS);
-        _recipe_input.add(Ingredient.fromItem(Items.IRON_BOOTS));
+        _recipe_input.add(Ingredient.fromItem(Items.LEATHER_BOOTS));
         _recipe_input.add(Ingredient.fromItem(Items.ENDER_PEARL));
+        _recipe_input.add(Ingredient.fromItem(Items.FLINT_AND_STEEL));
         registerRecipe(_recipe_input, EnumANNoteType.DIMENSIONS);
     }
 }

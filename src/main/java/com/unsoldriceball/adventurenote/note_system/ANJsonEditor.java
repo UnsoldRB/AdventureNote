@@ -9,6 +9,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import static com.unsoldriceball.adventurenote.ANMain.ID_MOD;
@@ -86,10 +88,20 @@ public class ANJsonEditor
         {
             if (type == EnumANNoteType.MOBS || type ==EnumANNoteType.BOSSES)
             {
+                final Map<String, String> _DATA = ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS);
+                _DATA.putAll(ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES));
+                final ArrayList<String> _CLASSNAMES = new ArrayList<>(_DATA.keySet());
+                final ArrayList<String> _IDS = new ArrayList<>(_DATA.values());
                 final ArrayList<String> _ARRAY_TEMP = new ArrayList<>();
+
                 for (String __s : data)
                 {
-                    _ARRAY_TEMP.add(ANUtils.getClassName(ANDataCollector.f_entities_instance.get(__s).getClass()));
+                    final int __INDEX = _IDS.indexOf(__s);
+
+                    if (__INDEX != -1)
+                    {
+                        _ARRAY_TEMP.add(_CLASSNAMES.get(__INDEX));
+                    }
                 }
                 return _ARRAY_TEMP;
             }

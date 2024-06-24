@@ -3,6 +3,7 @@ package com.unsoldriceball.adventurenote;
 import com.unsoldriceball.adventurenote.note_system.ANNoteBuilder;
 import com.unsoldriceball.adventurenote.note_system.EnumANNoteType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -153,6 +154,22 @@ public class ANUtils
             {
                 return _SIMPLENAME;
             }
+        }
+    }
+
+
+
+    //EntityLivingBaseから安全にクラス名を取得する関数。(NullPointerExceptionが発生することがあるらしい。)
+    public static String getClassNameFromELB(EntityLivingBase e)
+    {
+        try
+        {
+            final Class<?> _CLASS = e.getClass();
+            return getClassName(_CLASS);
+        }
+        catch (Exception exc)
+        {
+            return "";
         }
     }
 

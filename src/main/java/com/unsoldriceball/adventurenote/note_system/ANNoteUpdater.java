@@ -155,22 +155,25 @@ public class ANNoteUpdater
     //ANPlayerObserverから呼び出される。onUpdateData()のための関数。
     public void onEntityDeath(EntityLivingBase entity, EntityPlayer p)
     {
-        final String _NAME_CLASS = ANUtils.getClassName(entity.getClass());
+        final String _NAME_CLASS = ANUtils.getClassNameFromELB(entity);
 
-        if (ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).containsKey(_NAME_CLASS))
+        if (!_NAME_CLASS.isEmpty())
         {
-            if (!note_datas.get(EnumANNoteType.MOBS).contains(_NAME_CLASS))
+            if (ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).containsKey(_NAME_CLASS))
             {
-                final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).get(_NAME_CLASS);
-                onUpdateData(EnumANNoteType.MOBS, _NAME_CLASS, _ID_ENTITY, entity.getName(), p);
+                if (!note_datas.get(EnumANNoteType.MOBS).contains(_NAME_CLASS))
+                {
+                    final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).get(_NAME_CLASS);
+                    onUpdateData(EnumANNoteType.MOBS, _NAME_CLASS, _ID_ENTITY, entity.getName(), p);
+                }
             }
-        }
-        else if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).containsKey(_NAME_CLASS))
-        {
-            if (!note_datas.get(EnumANNoteType.BOSSES).contains(_NAME_CLASS))
+            else if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).containsKey(_NAME_CLASS))
             {
-                final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).get(_NAME_CLASS);
-                onUpdateData(EnumANNoteType.BOSSES, _NAME_CLASS, _ID_ENTITY, entity.getName(), p);
+                if (!note_datas.get(EnumANNoteType.BOSSES).contains(_NAME_CLASS))
+                {
+                    final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).get(_NAME_CLASS);
+                    onUpdateData(EnumANNoteType.BOSSES, _NAME_CLASS, _ID_ENTITY, entity.getName(), p);
+                }
             }
         }
     }

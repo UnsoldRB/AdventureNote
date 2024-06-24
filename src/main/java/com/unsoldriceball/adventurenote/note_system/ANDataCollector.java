@@ -16,17 +16,14 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import java.util.*;
 
 
-
-
 public class ANDataCollector
 {
     public static final Map<EnumANNoteType, Map<String, String>> f_registered_datas = new HashMap<>();
-    public static Map<String, EntityLivingBase> f_entities_instance = new HashMap<>();
+    public static Map<String, String> f_entities_name = new HashMap<>();
     public static Map<String, Biome> f_biomes_instance = new HashMap<>();
     private static List<String> f_ignore_entities = new ArrayList<>();
     private static List<String> f_ignore_biomes = new ArrayList<>();
     private static List<Integer> f_ignore_dimensions = new ArrayList<>();
-    public static final List<EntityLivingBase> f_error_entities = new ArrayList<>();   //getClassを使用できないEntityがたまに存在する。見つけた場合はこの配列に入れて、このmodで使用しないようにする。(ANPlayerObserverで使用。)
 
 
 
@@ -52,8 +49,7 @@ public class ANDataCollector
             f_registered_datas.put(EnumANNoteType.BIOMES, new TreeMap<>());
             f_registered_datas.put(EnumANNoteType.DIMENSIONS, new TreeMap<>());
             f_biomes_instance.clear();
-            f_entities_instance.clear();
-            f_error_entities.clear();
+            f_entities_name.clear();
 
             getEntityData(event.getWorld());
             getBiomeData();
@@ -75,32 +71,22 @@ public class ANDataCollector
                 final Entity __E = __ee.newInstance(world);
                 final EntityLivingBase __ELB = (EntityLivingBase) __E;
                 final String __ID_ELB = Objects.requireNonNull(__ee.getRegistryName()).toString();
-                final String __CLASSNAME_ELB;
-                try
-                {   //なぜかここでnullpointerexceptionが発生する場合があるらしい。modの相性だろうか。IDEAは別になんの警告もしてこないけど...
-                    __CLASSNAME_ELB = ANUtils.getClassName(__ELB.getClass());
-                }
-                catch (NullPointerException exc)
-                {
-                    //エラーが出たentityはこのmodで扱わないようにする。
-                    f_error_entities.add(__ELB);
-                    continue;
-                }
+                final String __CLASSNAME_ELB = ANUtils.getClassNameFromELB(__ELB);
 
-                //langファイルで名前が登録されていないentityと、configで設定されているentityは対象外とする。
-                if (ANUtils.hasName(__ELB) && !f_ignore_entities.contains(__ID_ELB) && !isIgnoreElement(__CLASSNAME_ELB))
+                //クラス名を取得できなかったentityと、langファイルで名前が登録されていないentityと、configで設定されているentityは対象外とする。
+                if (!__CLASSNAME_ELB.isEmpty() && ANUtils.hasName(__ELB) && !f_ignore_entities.contains(__ID_ELB) && !isIgnoreElement(__CLASSNAME_ELB))
                 {
                     if (__ELB.isNonBoss())
                     {
-
                         f_registered_datas.get(EnumANNoteType.MOBS).put(__CLASSNAME_ELB, __ID_ELB);
                     }
                     else
                     {
                         f_registered_datas.get(EnumANNoteType.BOSSES).put(__CLASSNAME_ELB, __ID_ELB);
                     }
-                    f_entities_instance.put(__ID_ELB, __ELB);
+                    f_entities_name.put(__CLASSNAME_ELB, __ELB.getName());
                 }
+                world.removeEntityDangerously(__ELB);
             }
         }
     }

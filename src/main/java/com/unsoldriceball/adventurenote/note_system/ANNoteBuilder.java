@@ -86,6 +86,7 @@ public class ANNoteBuilder
         final String _TEMPTEXT_PAGE = "#%#PAGE#%#";     //後の処理で各modのページ数に置換される。
         final String _TEMPTEXT_PAGE_PREFIX = ANConfig.c_Texts.prefixInNote_modPageIndex + "(";
         final String _TEMPTEXT_PAGE_SUFFIX = ")";
+        final String _TEMPTEXT_PAGE_BUILT = _TEMPTEXT_PAGE_PREFIX + _TEMPTEXT_PAGE + _TEMPTEXT_PAGE_SUFFIX;
         final String _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS = "%SPLIT%";      //この文字列でsplit()を実行する。
         final String _TEMPTEXT_LEACH_LENCAP = "%LEACH_LENCAP%";     //対象としたテキストがconfigで設定されている文字数制限を超えていることをシステムに対して示すために使う。
         final int _PAGE_CONTENTS_TABLE = 2;     //目次のページ。
@@ -150,7 +151,7 @@ public class ANNoteBuilder
                     //一行目にmod名を挿入する。
                     _str_builder.append(ANConfig.c_Texts.prefixInNote_modName);
                     _str_builder.append(__name_mod_thisloop);
-                    _str_builder.append(_TEMPTEXT_PAGE_PREFIX).append(_TEMPTEXT_PAGE).append(_TEMPTEXT_PAGE_SUFFIX);
+                    _str_builder.append(_TEMPTEXT_PAGE_BUILT);
                     _str_builder.append(_TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS);
                     _str_builder.append(_DOUBLE_NEW_LINE);
                     _line_now += 2;
@@ -210,24 +211,24 @@ public class ANNoteBuilder
         {
             final List<String> _FINALLY_CONTENTS = new ArrayList<>();
             final List<String> _NAMES_MOD = new ArrayList<>(_MODS.keySet());    //各modの名前が格納されている。
-            final Map<String, Integer> _MOD_PAGE_AMOUNT = new TreeMap<>();      //各modの最大ページ数が格納される。
+            final Map<String, Integer> _MOD_PAGE_AMOUNT = new LinkedHashMap<>();      //各modの最大ページ数が格納される。
             final String _TEMPTEXT_MAXPAGE = "%MAXPAGE%";
 
             int _mod_count = 0;         //処理したmodの個数を数える。
             int _mod_page_count = 1;    //同じmodが何回続いているかを記録する。
             StringBuilder _str_builder2 = new StringBuilder();     //一応宣言を分ける。名前の数字に意味はない。
             String _modname_now2 = _NAMES_MOD.get(_mod_count);      //一応宣言を分ける。名前の数字に意味はない。
-            String _key_mod_pageamount = _TEMPTEXT_MAXPAGE + _modname_now2;     //この後の処理で各modの最大ページ数に置換される。
+            String _key_mod_pageamount = _TEMPTEXT_MAXPAGE + _modname_now2 + _TEMPTEXT_MAXPAGE;     //この後の処理で各modの最大ページ数に置換される。
 
             for (String __s : _CONTENTS)
             {
-                //__s(ループ中のページ)にmod名が含まれなかった場合。(ページごとに必ずmod名が含まれる。)
-                if (!__s.contains(_modname_now2))
+                //__s(ループ中のページ)にmod名+_TEMPTEXT_PAGE_BUILTが含まれなかった場合。(ページごとに必ずmod名とそれに連なる仮のページ数表記が含まれる。)
+                if (!__s.contains(_modname_now2 + _TEMPTEXT_PAGE_BUILT))
                 {
                     _mod_count++;
                     _mod_page_count = 1;
                     _modname_now2 = _NAMES_MOD.get(_mod_count);
-                    _key_mod_pageamount = _TEMPTEXT_MAXPAGE + _modname_now2;
+                    _key_mod_pageamount = _TEMPTEXT_MAXPAGE + _modname_now2 + _TEMPTEXT_MAXPAGE;
                 }
                 _str_builder2.append(_mod_page_count);
                 _str_builder2.append(STRING_SPLITTER);
@@ -238,18 +239,20 @@ public class ANNoteBuilder
                 _str_builder2 = new StringBuilder();
                 _mod_page_count++;
 
+                //始まりの数字を0にするために-1をする。
                 _MOD_PAGE_AMOUNT.put(_key_mod_pageamount, _mod_page_count - 1);
             }
 
             //だんだんコード書くのがめんどくさくなってきた。ごり押しで書いてる。もっと賢いやり方が頭に浮かんでるけどもうめんどくさい。
             //最大ページ数をreplace()で書き込んでいく。
-            final ArrayList<String> _KEYS_MODPAGEAMOUNT = new ArrayList<>(_MOD_PAGE_AMOUNT.keySet());
+            final ArrayList<String> _KEYS_MODPAGEAMOUNT = new ArrayList<>(_MOD_PAGE_AMOUNT.keySet());   //mod名が入っている。
             int _loop_count = 0;
             int _mod_count3 = 0; //一応宣言を分ける。名前の数字に意味はない。
             String _key_now = _KEYS_MODPAGEAMOUNT.get(_mod_count3);
 
             for (String __s : _FINALLY_CONTENTS)
             {
+                //_TEMPTEXT_MAXPAGE+現在作業しているmod名+_TEMPTEXT_MAXPAGEが現在のページに含まれなかった場合。
                 if (!__s.contains(_key_now))
                 {
                     _mod_count3++;
@@ -530,7 +533,7 @@ public class ANNoteBuilder
             {
                 case MOBS:
                 case BOSSES:
-                    _target = ANDataCollector.f_entities_instance.get(_KEY).getName();
+                    _target = ANDataCollector.f_entities_name.get(s);
                     break;
                 case BIOMES:
                     _target = ANDataCollector.f_biomes_instance.get(_KEY).getBiomeName();
