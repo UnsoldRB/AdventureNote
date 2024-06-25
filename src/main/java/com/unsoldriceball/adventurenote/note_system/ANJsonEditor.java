@@ -10,7 +10,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 
 import static com.unsoldriceball.adventurenote.ANMain.ID_MOD;
@@ -82,40 +81,29 @@ public class ANJsonEditor
     //実際にプログラム内で使用するStringをそのまま保存すると、データファイルを見てもわかりにくいので、
     //データファイルには別のStringを保存してある。
     //それをまた元に戻す作業をfor()内で実行している。
-    public static ArrayList<String> convertIDtoClassName(ArrayList<String> data, EnumANNoteType type)
+    public static ArrayList<Integer> convertIDtoClassName(ArrayList<String> data, EnumANNoteType type)
     {
         if (!data.isEmpty())
         {
-            if (type == EnumANNoteType.MOBS || type ==EnumANNoteType.BOSSES)
+            final ArrayList<Integer> _ARRAY_TEMP = new ArrayList<>();
+
+            if (type == EnumANNoteType.DIMENSIONS)
             {
-                final Map<String, String> _DATA = ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS);
-                _DATA.putAll(ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES));
-                final ArrayList<String> _CLASSNAMES = new ArrayList<>(_DATA.keySet());
-                final ArrayList<String> _IDS = new ArrayList<>(_DATA.values());
-                final ArrayList<String> _ARRAY_TEMP = new ArrayList<>();
+                //dimensionの場合はdata内にdimension idがstringとして入っている
+                _ARRAY_TEMP.addAll(ANUtils.parseToIntArray(data));
+            }
+            else
+            {
+                final Map<String, Integer> _FLIPPED_MAP = ANUtils.getFlipped_f_registered_datas(type);
 
                 for (String __s : data)
                 {
-                    final int __INDEX = _IDS.indexOf(__s);
-
-                    if (__INDEX != -1)
-                    {
-                        _ARRAY_TEMP.add(_CLASSNAMES.get(__INDEX));
-                    }
+                    _ARRAY_TEMP.add(_FLIPPED_MAP.get(__s));
                 }
-                return _ARRAY_TEMP;
             }
-            else if (type == EnumANNoteType.BIOMES)
-            {
-                final ArrayList<String> _ARRAY_TEMP = new ArrayList<>();
-                for (String __s : data)
-                {
-                    _ARRAY_TEMP.add(ANUtils.getClassName(ANDataCollector.f_biomes_instance.get(__s).getClass()));
-                }
-                return _ARRAY_TEMP;
-            }
+            return _ARRAY_TEMP;
         }
-        return data;
+        return new ArrayList<>();
     }
 
 
@@ -190,7 +178,7 @@ public class ANJsonEditor
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Error: ANJsonEditor.writeJsonToFile()");
         }
     }
 }

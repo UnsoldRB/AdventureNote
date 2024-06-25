@@ -27,7 +27,7 @@ public class ANNoteUpdater
     //本の内容と、このmodで使用するプレイヤーのデータを更新するべきかどうかを判断するために、その都度JSONを読み取るのはなんか違う気がするので、
     //以下2つの変数に、プレイヤーのデータと、そのサイズを保存しておく。
     //これによって、JSONを読み取るのは、本の作成・更新時のみになる。
-    private final Map<EnumANNoteType, ArrayList<String>> note_datas = new HashMap<>();
+    private final Map<EnumANNoteType, ArrayList<Integer>> note_datas = new HashMap<>();
     public final Map<EnumANNoteType, Integer> note_progress = new HashMap<>();
 
 
@@ -67,7 +67,7 @@ public class ANNoteUpdater
                         EnumANNoteType.BIOMES
                 )
         );
-        note_datas.put(EnumANNoteType.DIMENSIONS, _DATA_DIMENSION);
+        note_datas.put(EnumANNoteType.DIMENSIONS, ANUtils.parseToIntArray(_DATA_DIMENSION));
     }
 
 
@@ -89,7 +89,10 @@ public class ANNoteUpdater
             {
                 //新品のAdventureNoteだった場合にこちらの処理が実行される(クラフトしたばかりの場合など。)。
                 event.setCanceled(true);
-                _P.setHeldItem(EnumHand.MAIN_HAND, ANNoteBuilder.createNote(_TYPE_NOTE, _P));
+                final ItemStack _NEWNOTE = ANNoteBuilder.createNote(_TYPE_NOTE, _P);
+
+                _NEWNOTE.setCount(_HELDITEM.getCount());
+                _P.setHeldItem(EnumHand.MAIN_HAND, _NEWNOTE);
                 onPlayerClickNote_stageEffect(_P);
             }
             else if(_P.getUniqueID().equals(_OWNER))
@@ -99,7 +102,10 @@ public class ANNoteUpdater
                 if (_NBT_HELDITEM != null && ANUtils.isNotEqualNBT_progress(_HELDITEM, note_progress.get(_TYPE_NOTE)))
                 {
                     event.setCanceled(true);
-                    _P.setHeldItem(EnumHand.MAIN_HAND, ANNoteBuilder.createNote(_TYPE_NOTE, _P));
+                    final ItemStack _NEWNOTE = ANNoteBuilder.createNote(_TYPE_NOTE, _P);
+
+                    _NEWNOTE.setCount(_HELDITEM.getCount());
+                    _P.setHeldItem(EnumHand.MAIN_HAND, _NEWNOTE);
                     onPlayerClickNote_stageEffect(_P);
                 }
             }
@@ -121,7 +127,7 @@ public class ANNoteUpdater
 
 
     //プレイヤーが新規dimension, biome, entityを達成したときに呼び出される。
-    private void onUpdateData(EnumANNoteType type, String new_data, String new_data_forJson, String displayname, EntityPlayer p)
+    private void onUpdateData(EnumANNoteType type, Integer new_data, String new_data_forJson, String displayname, EntityPlayer p)
     {
         note_datas.get(type).add(new_data);
         note_progress.put(type, note_progress.get(type) + 1);
@@ -155,24 +161,24 @@ public class ANNoteUpdater
     //ANPlayerObserverから呼び出される。onUpdateData()のための関数。
     public void onEntityDeath(EntityLivingBase entity, EntityPlayer p)
     {
-        final String _NAME_CLASS = ANUtils.getClassNameFromELB(entity);
+        final Integer _HASH = ANUtils.getHashCodeFromELBClass(entity);
 
-        if (!_NAME_CLASS.isEmpty())
+        if (_HASH != null)
         {
-            if (ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).containsKey(_NAME_CLASS))
+            if (ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).containsKey(_HASH))
             {
-                if (!note_datas.get(EnumANNoteType.MOBS).contains(_NAME_CLASS))
+                if (!note_datas.get(EnumANNoteType.MOBS).contains(_HASH))
                 {
-                    final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).get(_NAME_CLASS);
-                    onUpdateData(EnumANNoteType.MOBS, _NAME_CLASS, _ID_ENTITY, entity.getName(), p);
+                    final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS).get(_HASH);
+                    onUpdateData(EnumANNoteType.MOBS, _HASH, _ID_ENTITY, entity.getName(), p);
                 }
             }
-            else if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).containsKey(_NAME_CLASS))
+            else if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).containsKey(_HASH))
             {
-                if (!note_datas.get(EnumANNoteType.BOSSES).contains(_NAME_CLASS))
+                if (!note_datas.get(EnumANNoteType.BOSSES).contains(_HASH))
                 {
-                    final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).get(_NAME_CLASS);
-                    onUpdateData(EnumANNoteType.BOSSES, _NAME_CLASS, _ID_ENTITY, entity.getName(), p);
+                    final String _ID_ENTITY = ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES).get(_HASH);
+                    onUpdateData(EnumANNoteType.BOSSES, _HASH, _ID_ENTITY, entity.getName(), p);
                 }
             }
         }
@@ -183,14 +189,14 @@ public class ANNoteUpdater
     //ANPlayerObserverから呼び出される。onUpdateData()のための関数。
     public void onBiomeChanged(Biome biome, EntityPlayer p)
     {
-        if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BIOMES).containsKey(ANUtils.getClassName(biome.getClass())))
-        {
-            final String _NAME_CLASS = ANUtils.getClassName(biome.getClass());
+        final int _HASH = biome.getClass().hashCode();
 
-            if (!note_datas.get(EnumANNoteType.BIOMES).contains(_NAME_CLASS))
+        if (ANDataCollector.f_registered_datas.get(EnumANNoteType.BIOMES).containsKey(_HASH))
+        {
+            if (!note_datas.get(EnumANNoteType.BIOMES).contains(_HASH))
             {
-                final String _ID_BIOME = ANDataCollector.f_registered_datas.get(EnumANNoteType.BIOMES).get(_NAME_CLASS);
-                onUpdateData(EnumANNoteType.BIOMES, _NAME_CLASS, _ID_BIOME, biome.getBiomeName(), p);
+                final String _ID_BIOME = ANDataCollector.f_registered_datas.get(EnumANNoteType.BIOMES).get(_HASH);
+                onUpdateData(EnumANNoteType.BIOMES, _HASH, _ID_BIOME, biome.getBiomeName(), p);
             }
         }
     }
@@ -200,15 +206,14 @@ public class ANNoteUpdater
     //ANPlayerObserverから呼び出される。onUpdateData()のための関数。
     public void onDimensionChanged(Integer dim, EntityPlayer p)
     {
-        final Map<String, String> _DATA_DIM = ANDataCollector.f_registered_datas.get(EnumANNoteType.DIMENSIONS);
-        final String _ID_DIM = String.valueOf(dim);
+        final Map<Integer, String> _DATA_DIM = ANDataCollector.f_registered_datas.get(EnumANNoteType.DIMENSIONS);
 
-        if (_DATA_DIM.containsKey(String.valueOf(_ID_DIM)))
+        if (_DATA_DIM.containsKey(dim))
         {
-            if (!note_datas.get(EnumANNoteType.DIMENSIONS).contains(_ID_DIM))
+            if (!note_datas.get(EnumANNoteType.DIMENSIONS).contains(dim))
             {
-                final String _NAME_DIMENSION = _DATA_DIM.get(_ID_DIM);
-                onUpdateData(EnumANNoteType.DIMENSIONS, _ID_DIM, _ID_DIM, _NAME_DIMENSION, p);
+                final String _NAME_DIMENSION = _DATA_DIM.get(dim);
+                onUpdateData(EnumANNoteType.DIMENSIONS, dim, String.valueOf(dim), _NAME_DIMENSION, p);
             }
         }
     }

@@ -1,6 +1,8 @@
 package com.unsoldriceball.adventurenote;
 
+import com.unsoldriceball.adventurenote.note_system.ANDataCollector;
 import com.unsoldriceball.adventurenote.note_system.ANNoteUpdater;
+import com.unsoldriceball.adventurenote.note_system.EnumANNoteType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -54,7 +56,7 @@ public class ANPlayerObserver
         final boolean _IS_ENABLE = ANConfig.c_Systems.enableNoteSystem_mob || ANConfig.c_Systems.enableNoteSystem_boss;
         final EntityLivingBase _VICTIM = event.getEntityLiving();
 
-        if (_IS_ENABLE && _VICTIM != null && !_VICTIM.world.isRemote && !ANUtils.getClassNameFromELB(_VICTIM).isEmpty())    //クラス名を取得できないEntityは無視する。
+        if (_IS_ENABLE && _VICTIM != null && !_VICTIM.world.isRemote)
         {
             final Entity _ATTACKER = event.getSource().getTrueSource();
 

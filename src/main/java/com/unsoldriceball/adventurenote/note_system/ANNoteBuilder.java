@@ -7,25 +7,26 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.common.DimensionManager;
 
 import java.util.*;
 
 
 public class ANNoteBuilder
 {
+    private static final String SECTION = "\u00A7";
     public static final String TAGNAME_TITLE = "title";
     public static final String TAGNAME_AUTHOR = "author";
     public static final String TAGNAME_CONTENTS = "pages";
     //本の著者名の前にこれをEnumANNoteTypeのordinalの数だけ追加することで、本を識別する。
-    public static final String TAGVALUE_AUTHOR_KEY = "\u00A7l\u00A7e\u00A7r\u00A7o\u00A7r";
-    public static final String TAGVALUE_PREFIX_UUID = "\u00A70_UU";
+    public static final String TAGVALUE_AUTHOR_KEY = SECTION + "l" + SECTION + "e" + SECTION + "r" + SECTION + "o" + SECTION + "r";
+    public static final String TAGVALUE_PREFIX_UUID = SECTION + "0_UU";
     public static final String TAGVALUE_SUFFIX_UUID = "ID_";
     public static final String TAGVALUE_PREFIX_PROGRESS = "#";
-    public static final String STRING_NEWLINE = "\n";
-    public static final String STRING_SPLITTER = "/";
-    public static final String STRING_PERCENTAGE = "%";
+    private static final String STRING_NEWLINE = "\n";
+    private static final String STRING_SPLITTER = "/";
+    private static final String STRING_PERCENTAGE = "%";
+    private static final int MAXLINE_INPAGE = 14;
+    private static final int PAGE_CONTENTS_TABLE = 2;     //目次のページ。
 
 
 
@@ -80,8 +81,6 @@ public class ANNoteBuilder
     //内容->目次->最初のページの順で作成される。
     private static List<String> buildPages(EnumANNoteType type, UUID uuid_p)
     {
-        MinecraftServer s = DimensionManager.getWorld(0).getMinecraftServer();
-        final int _MAXLINE_INPAGE = 14;
         final String _DOUBLE_NEW_LINE = STRING_NEWLINE + STRING_NEWLINE;
         final String _TEMPTEXT_PAGE = "#%#PAGE#%#";     //後の処理で各modのページ数に置換される。
         final String _TEMPTEXT_PAGE_PREFIX = ANConfig.c_Texts.prefixInNote_modPageIndex + "(";
@@ -89,10 +88,9 @@ public class ANNoteBuilder
         final String _TEMPTEXT_PAGE_BUILT = _TEMPTEXT_PAGE_PREFIX + _TEMPTEXT_PAGE + _TEMPTEXT_PAGE_SUFFIX;
         final String _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS = "%SPLIT%";      //この文字列でsplit()を実行する。
         final String _TEMPTEXT_LEACH_LENCAP = "%LEACH_LENCAP%";     //対象としたテキストがconfigで設定されている文字数制限を超えていることをシステムに対して示すために使う。
-        final int _PAGE_CONTENTS_TABLE = 2;     //目次のページ。
-        final Map<String, String> _DATA_REGISTRY = ANDataCollector.f_registered_datas.get(type);
-        final ArrayList<String> _DATA_REGISTRY_KEYS = new ArrayList<>(_DATA_REGISTRY.keySet());
-        final ArrayList<String> _DATA_PLAYER = ANJsonEditor.convertIDtoClassName(ANJsonEditor.getValue_Json(uuid_p, type.name()), type);
+        final Map<Integer, String> _DATA_REGISTRY = getSorted_f_registered_data(type);
+        final ArrayList<Integer> _DATA_REGISTRY_KEYS = new ArrayList<>(_DATA_REGISTRY.keySet());
+        final ArrayList<Integer> _DATA_PLAYER = ANJsonEditor.convertIDtoClassName(ANJsonEditor.getValue_Json(uuid_p, type.name()), type);
         final ArrayList<String> _CONTENTS = new ArrayList<>();      //1つのindexに1つのページデータが格納される。
         final Map<String, int[]> _MODS = new LinkedHashMap<>();    //modが最初に登場したページ番号と、要したページの枚数、要素の数を保存していく。
         final int _MODS_INDEX_FIRSTPAGE = 0;
@@ -105,18 +103,18 @@ public class ANNoteBuilder
         String _modname_now = "";
 
         //ANDataCollector.f_registered_datas.get(type)内の全のKeyをループする。ここにはclassのcanonicalNameか、DimensionIDが格納されている。
-        for (String __s : _DATA_REGISTRY_KEYS)
+        for (Integer __hash : _DATA_REGISTRY_KEYS)
         {
             //現在作業している行が、1ページの最大行数を超えていた場合(ページを追加する。)。
-            if (_line_now > _MAXLINE_INPAGE)
+            if (_line_now > MAXLINE_INPAGE)
             {
-                _CONTENTS.add(convertContentsPage_toJson(_str_builder, _PAGE_CONTENTS_TABLE, _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS));
+                _CONTENTS.add(convertContentsPage_toJson(_str_builder, _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS));
                 _str_builder = new StringBuilder();
                 _line_now = 1;
             }
 
             //__sのmod名を取得する(dimensionにmod名は無い。)。
-            String __name_mod_thisloop = dataName_To_DisplayName(getModName_FromID(_DATA_REGISTRY.get(__s)), true, _TEMPTEXT_LEACH_LENCAP);
+            String __name_mod_thisloop = dataName_To_DisplayName(getModName_FromID(_DATA_REGISTRY.get(__hash)), true, _TEMPTEXT_LEACH_LENCAP);
             if (__name_mod_thisloop.endsWith(_TEMPTEXT_LEACH_LENCAP))    //configで設定されており、文字数制限に達している印が含まれている場合。
             {
                 __name_mod_thisloop = __name_mod_thisloop.replace(_TEMPTEXT_LEACH_LENCAP, "");
@@ -133,7 +131,7 @@ public class ANNoteBuilder
                     //「作業している行が1行目でない」場合。(要はそのmodの要素が、MAXLINE_INPAGEとぴったりではない行の段階でなくなった場合。)
                     if (_line_now != 1)
                     {
-                        _CONTENTS.add(convertContentsPage_toJson(_str_builder, _PAGE_CONTENTS_TABLE, _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS));
+                        _CONTENTS.add(convertContentsPage_toJson(_str_builder, _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS));
                         _str_builder = new StringBuilder();
                         _line_now = 1;
                     }
@@ -158,13 +156,13 @@ public class ANNoteBuilder
                 }
                 _MODS.get(_modname_now)[_MODS_INDEX_ELEMENTS_AMOUNT]++;
                 //プレイヤーが__sをアンロック済みだった場合(個数を数えておく。)。
-                if (_DATA_PLAYER.contains(__s))
+                if (_DATA_PLAYER.contains(__hash))
                 {
                     _MODS.get(_modname_now)[_MODS_INDEX_UNLOCKEDELEMENTS_AMOUNT]++;
                 }
             }
             //プレイヤーが__sをアンロック済みだった場合とそうでない場合(文字を装飾する。)。
-            if (_DATA_PLAYER.contains(__s))
+            if (_DATA_PLAYER.contains(__hash))
             {
                 _str_builder.append(ANConfig.c_Texts.prefixInNote_element_unlocked);
             }
@@ -173,14 +171,14 @@ public class ANNoteBuilder
                 _str_builder.append(ANConfig.c_Texts.prefixInNote_element_locked);
             }
 
-            String __name_element = getDisplayName_fromData(type, __s, _TEMPTEXT_LEACH_LENCAP); //__sを実際にプレイヤーに表示する形式にしたもの。elementの名前の由来は、modに含まれる要素であることから。
+            String __name_element = getDisplayName_fromData(type, __hash, _TEMPTEXT_LEACH_LENCAP); //__sを実際にプレイヤーに表示する形式にしたもの。elementの名前の由来は、modに含まれる要素であることから。
             if (__name_element.contains(_TEMPTEXT_LEACH_LENCAP))    //configで設定されており、文字数制限に達している印が含まれている場合。
             {
                 __name_element = __name_element.replace(_TEMPTEXT_LEACH_LENCAP, "");
                 _line_now++;
             }
             //configで隠すように設定されている場合は、解除していない要素名を隠す。
-            if (ANConfig.c_Systems.hideLockedName && !_DATA_PLAYER.contains(__s))
+            if (ANConfig.c_Systems.hideLockedName && !_DATA_PLAYER.contains(__hash))
             {
                 __name_element = __name_element.replaceAll("\\S", ANConfig.c_Texts.string_hideLockedName);
             }
@@ -188,9 +186,9 @@ public class ANNoteBuilder
             _str_builder.append(STRING_NEWLINE);
 
             //最後のループだった場合は、MAXLINE_INPAGEまで行が達していなくてもその時点でページとして配列に追加する。
-            if (_DATA_REGISTRY_KEYS.get(_DATA_REGISTRY_KEYS.size() - 1).equals(__s))
+            if (_DATA_REGISTRY_KEYS.get(_DATA_REGISTRY_KEYS.size() - 1).equals(__hash))
             {
-                _CONTENTS.add(convertContentsPage_toJson(_str_builder, _PAGE_CONTENTS_TABLE, _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS));
+                _CONTENTS.add(convertContentsPage_toJson(_str_builder, _TEMPTEXT_SPLIT_MODNAME_AND_ELEMENTS));
                 //ここでforの処理終了。
             }
             else
@@ -264,7 +262,7 @@ public class ANNoteBuilder
             }
 
             //最初のページ、目次、メインページを結合していく。
-            final List<String> _CONTENT_TABLE =  buildContentsTable(_MODS, _MODS_INDEX_FIRSTPAGE, _MODS_INDEX_ELEMENTS_AMOUNT, _MODS_INDEX_UNLOCKEDELEMENTS_AMOUNT, _MAXLINE_INPAGE);
+            final List<String> _CONTENT_TABLE =  buildContentsTable(_MODS, _MODS_INDEX_FIRSTPAGE, _MODS_INDEX_ELEMENTS_AMOUNT, _MODS_INDEX_UNLOCKEDELEMENTS_AMOUNT);
             final List<String> _FIRSTPAGE = buildFirstPage(type, _DATA_REGISTRY.size(), _DATA_PLAYER.size());
             _CONTENT_TABLE.addAll(_FINALLY_CONTENTS);
             _FIRSTPAGE.addAll(_CONTENT_TABLE);
@@ -276,7 +274,7 @@ public class ANNoteBuilder
 
 
     //目次を作成する関数。
-    private static List<String> buildContentsTable(Map<String, int[]> mods, int mods_index_firstpage, int mods_index_elementsamount, int mods_index_unlockedelementsamount, int max_line)
+    private static List<String> buildContentsTable(Map<String, int[]> mods, int mods_index_firstpage, int mods_index_elementsamount, int mods_index_unlockedelementsamount)
     {
         final String _STRING_PREFIX_PROGRESS = "(";
         final String _STRING_SUFFIX_PROGRESS = ")";
@@ -337,7 +335,7 @@ public class ANNoteBuilder
                 _line_now++;
                 _str_builder.append(_str_builder_perline);
                 _str_builder_perline = new StringBuilder();
-                if (_line_now > max_line)
+                if (_line_now > MAXLINE_INPAGE)
                 {
                     _RESULT.add("[" + _str_builder + "]");
                     _str_builder = new StringBuilder();
@@ -427,7 +425,8 @@ public class ANNoteBuilder
             if (ANConfig.c_Systems.showHoverText_pageTo)
             {
                 _STR_BUILDER.append(",\"hoverEvent\":{\"action\":\"show_text\",\"value\":\"");
-                _STR_BUILDER.append("\u00A77-> p.");
+                _STR_BUILDER.append(SECTION);
+                _STR_BUILDER.append("7-> p.");
                 _STR_BUILDER.append(change_page);
                 _STR_BUILDER.append("\"}");
             }
@@ -439,7 +438,7 @@ public class ANNoteBuilder
 
 
     //_CONTENTSに追加する予定のStringBuilderを、必要に応じてmod名をクリックで目次に飛べるようにした上で、Json化する関数。
-    private static String convertContentsPage_toJson(StringBuilder target, int page_contentstable, String temptext_split)
+    private static String convertContentsPage_toJson(StringBuilder target, String temptext_split)
     {
         final String _TARGET = String.valueOf(target);
         //mod名が含まれているかどうか(dimensionなどの場合は含まれない。)
@@ -450,7 +449,7 @@ public class ANNoteBuilder
         else
         {
             final String[] _TARGET_SPLITTED = _TARGET.split(temptext_split);
-            final String _MODNAME = toJson_BookText(_TARGET_SPLITTED[0], page_contentstable);
+            final String _MODNAME = toJson_BookText(_TARGET_SPLITTED[0], PAGE_CONTENTS_TABLE);
             final String _ELEMENTS = toJson_BookText(_TARGET_SPLITTED[1], null);
 
             return "[" + _MODNAME + "," + _ELEMENTS + "]"; //","でJsonの{}同士を繋ぐ。
@@ -522,30 +521,29 @@ public class ANNoteBuilder
 
 
     //className、あるいはdimensionIDから、表示名を取得する関数。
-    private static String getDisplayName_fromData(EnumANNoteType type, String s, String temptext_leach_lencap)
+    private static String getDisplayName_fromData(EnumANNoteType type, Integer hash, String temptext_leach_lencap)
     {
-        final String _KEY = ANDataCollector.f_registered_datas.get(type).get(s);
-
-        if (_KEY != null)
+        String _target = "";
+        switch (type)
         {
-            String _target = "";
-            switch (type)
-            {
-                case MOBS:
-                case BOSSES:
-                    _target = ANDataCollector.f_entities_name.get(s);
-                    break;
-                case BIOMES:
-                    _target = ANDataCollector.f_biomes_instance.get(_KEY).getBiomeName();
-                    break;
-                case DIMENSIONS:
-                    //dimensionだけ名前の取得方法がそもそも他と異なる。
+            case MOBS:
+            case BOSSES:
+                _target = ANDataCollector.f_entities_name.get(hash);
+                break;
+            case BIOMES:
+                _target = ANDataCollector.f_biomes_instance.get(hash).getBiomeName();
+                break;
+            case DIMENSIONS:
+                //dimensionだけ名前の取得方法がそもそも他と異なる。
+                final String _KEY = ANDataCollector.f_registered_datas.get(type).get(hash);
+
+                if (_KEY != null)
+                {
                     _target = dataName_To_DisplayName(_KEY, false, temptext_leach_lencap);
-                    break;
-            }
-            return applyLenCap(_target, false, temptext_leach_lencap);
+                }
+                break;
         }
-        return "";
+        return applyLenCap(_target, false, temptext_leach_lencap);
     }
 
 
@@ -628,5 +626,33 @@ public class ANNoteBuilder
             //dimensionなどはこちらの処理が実行される。
             return "";
         }
+    }
+
+
+
+    //valueの名前順でANDataCollector.f_registered_datas.get(type)のデータをソートする。
+    private static Map<Integer, String> getSorted_f_registered_data(EnumANNoteType type)
+    {
+        final Map<Integer, String> _DATA = new HashMap<>(ANDataCollector.f_registered_datas.get(type));
+        final ArrayList<Integer> _KEYS = new ArrayList<>(_DATA.keySet());
+        final ArrayList<String> _VALUES = new ArrayList<>(_DATA.values());
+        final ArrayList<String> _VALUES_SORTED = new ArrayList<>(_DATA.values());
+        Collections.sort(_VALUES_SORTED);
+
+        final ArrayList<Integer> _SORTED_INDEX = new ArrayList<>();
+        final Map<Integer, String> _SORTED_DATA = new LinkedHashMap<>();
+
+
+        for (String __s : _VALUES_SORTED)
+        {
+            _SORTED_INDEX.add(_VALUES.indexOf(__s));
+        }
+
+        for (Integer __i : _SORTED_INDEX)
+        {
+            _SORTED_DATA.put(_KEYS.get(__i), _VALUES.get(__i));
+        }
+
+        return _SORTED_DATA;
     }
 }

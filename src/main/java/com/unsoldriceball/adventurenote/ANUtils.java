@@ -1,5 +1,6 @@
 package com.unsoldriceball.adventurenote;
 
+import com.unsoldriceball.adventurenote.note_system.ANDataCollector;
 import com.unsoldriceball.adventurenote.note_system.ANNoteBuilder;
 import com.unsoldriceball.adventurenote.note_system.EnumANNoteType;
 import net.minecraft.entity.Entity;
@@ -8,6 +9,9 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -15,6 +19,35 @@ import java.util.UUID;
 
 public class ANUtils
 {
+    //ANDataCollector.f_registered_datas.get(type)のkeyとvalueを反転させたものを取得する関数。
+    public static Map<String, Integer> getFlipped_f_registered_datas(EnumANNoteType type)
+    {
+        final Map<Integer, String> _DATA;
+
+        if (type == EnumANNoteType.MOBS || type == EnumANNoteType.BOSSES)
+        {
+            _DATA = new HashMap<>(ANDataCollector.f_registered_datas.get(EnumANNoteType.MOBS));
+            _DATA.putAll(new HashMap<>(ANDataCollector.f_registered_datas.get(EnumANNoteType.BOSSES)));
+        }
+        else
+        {
+            _DATA = new HashMap<>(ANDataCollector.f_registered_datas.get(type));
+        }
+
+        final ArrayList<Integer> _KEYS = new ArrayList<>(_DATA.keySet());
+        final ArrayList<String> _VALUES = new ArrayList<>(_DATA.values());
+
+        final Map<String, Integer> _RESULT = new HashMap<>();
+
+        for (int __i = 0; __i <= _KEYS.size() - 1; __i++)
+        {
+            _RESULT.put(_VALUES.get(__i), _KEYS.get(__i));
+        }
+        return _RESULT;
+    }
+
+
+
     //buildNoteAuthorName()で生成された著者名を利用して本を識別する。
     public static EnumANNoteType getNoteType(ItemStack item)
     {
@@ -135,42 +168,33 @@ public class ANUtils
 
 
 
-    //クラス名を返す関数。
-    public static String getClassName(Class<?> c)
+    //EntityLivingBaseから安全にクラス名を取得する関数。(NullPointerExceptionが発生することがあるらしい。)
+    public static Integer getHashCodeFromELBClass(EntityLivingBase e)
     {
         try
         {
-            return c.getCanonicalName();
+            final Class<?> _CLASS = e.getClass();
+            return _CLASS.hashCode();
         }
-        catch (NullPointerException exc)
+        catch (Exception exc)
         {
-            final String _SIMPLENAME = c.getSimpleName();
-
-            if (_SIMPLENAME.equals("[]") || _SIMPLENAME.isEmpty())
-            {
-                return c.getName();
-            }
-            else
-            {
-                return _SIMPLENAME;
-            }
+            return null;
         }
     }
 
 
 
-    //EntityLivingBaseから安全にクラス名を取得する関数。(NullPointerExceptionが発生することがあるらしい。)
-    public static String getClassNameFromELB(EntityLivingBase e)
+    //数値を保管しているArrayList<String>をArrayList<Integer>に変換する関数。
+    public static ArrayList<Integer> parseToIntArray(ArrayList<String> array)
     {
-        try
+        final ArrayList<Integer> _ARRAY_TEMP = new ArrayList<>();
+
+        for (String __s : array)
         {
-            final Class<?> _CLASS = e.getClass();
-            return getClassName(_CLASS);
+            _ARRAY_TEMP.add(Integer.valueOf(__s));
         }
-        catch (Exception exc)
-        {
-            return "";
-        }
+
+        return _ARRAY_TEMP;
     }
 
 

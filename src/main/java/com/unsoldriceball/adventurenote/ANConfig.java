@@ -21,6 +21,8 @@ public class ANConfig
 
     public static class Systems
     {
+        @Config.Comment("If set to true, this mod will output all element IDs to your .log file when loading a world.")
+        public boolean debug_printAllIDs = false;
         @Config.RequiresMcRestart
         @Config.Comment("If set to false, this mod will not give the notes when a player joins for the first time.")
         public boolean giveNotes_onFirstJoin = true;
@@ -76,6 +78,7 @@ public class ANConfig
         @Config.Comment("If listed name here, this mod will ignore that.")
         public String[] ignoreEntityList =
                 {
+                        "minecraft:armor_stand",
                         "twilightforest:boggard",
                         "twilightforest:apocalypse_cube",
                         "twilightforest:adherent",
